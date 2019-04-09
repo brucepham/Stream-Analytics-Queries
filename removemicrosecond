@@ -1,0 +1,27 @@
+DATETIMEFROMPARTS (Azure Stream Analytics)
+https://docs.microsoft.com/en-us/stream-analytics-query/datetimefromparts-azure-stream-analytics
+
+DATEPART (Azure Stream Analytics)
+https://docs.microsoft.com/en-us/stream-analytics-query/datepart-azure-stream-analytics
+
+
+WITH FIRSTQUERY AS (
+SELECT
+    UPPER(TAG) AS UTAG, VALUE, TS, 
+    DATEPART(yyyy, TS) AS yr, 
+    DATEPART(m, TS) as mth,
+    DATEPART(d, TS) as dy,
+    DATEPART(hh, TS) as ht,
+    DATEPART(mi, TS) as min,
+    DATEPART(s, TS) as sec,
+    DATETIMEFROMPARTS (DATEPART(yyyy, TS), DATEPART(m, TS), DATEPART(d, TS), DATEPART(hh, TS), DATEPART(mi, TS), DATEPART(s, TS), 00)  as myts 
+FROM
+    input01 TIMESTAMP BY TS)
+SELECT myts, 
+MAX(CASE UTAG WHEN 'ACD_FLOW_IN' THEN TRY_CAST(VALUE AS FLOAT) ELSE NULL END) 'ACD_FLOW_IN',
+MAX(CASE UTAG WHEN 'ACD_READY' THEN TRY_CAST(VALUE AS FLOAT) ELSE NULL END) 'ACD_READY',
+MAX(CASE UTAG WHEN 'ADGPOSTINFL_VOLUME_MAX' THEN TRY_CAST(VALUE AS FLOAT) ELSE NULL END) 'ADGPOSTINFL_VOLUME_MAX',
+MAX(CASE UTAG WHEN 'AFG_DRILLER_CTRL_REQUEST' THEN TRY_CAST(VALUE AS FLOAT) ELSE NULL END) 'AFG_DRILLER_CTRL_REQUEST'
+INTO output01 
+FROM FIRSTQUERY 
+GROUP BY myts, TumblingWindow(second, 1) 
